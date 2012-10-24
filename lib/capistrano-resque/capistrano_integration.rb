@@ -36,14 +36,13 @@ module CapistranoResque
           desc "Start Resque workers"
           task :start, :roles => lambda { workers_roles() }, :on_no_matching_servers => :continue do
             pid_path = "#{current_path()}/tmp/pids"
-            run("cd #{current_path()}; rvm use #{rvm_ruby_string};")
             for_each_workers do |role, workers|
               worker_id = 1
               workers.each_pair do |queue, number_of_workers|
                 puts "Starting #{number_of_workers} worker(s) with QUEUE: #{queue}"
                 number_of_workers.times do
                   pid = "#{pid_path}/resque_work_#{worker_id}.pid"
-                  run("RAILS_ENV=#{rails_env} QUEUE=\"#{queue}\" PIDFILE=#{pid} BACKGROUND=yes VERBOSE=1 #{fetch(:bundle_cmd, "bundle")} exec rake environment resque:work >> #{shared_path}/log/resque.log 2>&1 &", 
+                  run("cd #{current_path()}/rails; rvm use #{rvm_ruby_string}; RAILS_ENV=#{rails_env} QUEUE=\"#{queue}\" PIDFILE=#{pid} BACKGROUND=yes VERBOSE=1 #{fetch(:bundle_cmd, "bundle")} exec rake environment resque:work >> #{shared_path}/log/resque.log 2>&1", 
                       :roles => role)
                   worker_id += 1
                 end
@@ -74,8 +73,7 @@ module CapistranoResque
           namespace :scheduler do
             desc "Starts resque scheduler with default configs"
             task :start, :roles => :resque_scheduler do
-              run "cd #{current_path}/rails; rvm use #{rvm_ruby_string};"
-              run "RAILS_ENV=#{rails_env} PIDFILE=./tmp/pids/scheduler.pid BACKGROUND=yes bundle exec rake resque:scheduler >> #{shared_path}/log/resque_scheduler.log 2>&1 &"
+              run "cd #{current_path}/rails; rvm use #{rvm_ruby_string}; RAILS_ENV=#{rails_env} PIDFILE=./tmp/pids/scheduler.pid BACKGROUND=yes bundle exec rake resque:scheduler >> #{shared_path}/log/resque_scheduler.log 2>&1 &"
             end
 
             desc "Stops resque scheduler"
